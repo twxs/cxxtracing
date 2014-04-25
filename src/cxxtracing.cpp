@@ -46,11 +46,12 @@ struct ProfileBlock {
 	std::map<std::string, std::string> args;
 	Phase phase;
 
-	ProfileBlock(const std::string name, Phase phase) {
+	ProfileBlock(const std::string name, Phase phase, std::string category = std::string() ) {
 		auto start = std::chrono::system_clock::now();
 		this->process = _processName;
 		this->thread = thread_name();
 		this->name = name;
+		this->category = category;
 		this->timestamp = start.time_since_epoch().count();
 		this->phase = phase;
 	}
@@ -105,38 +106,33 @@ void send_block(const ProfileBlock&b) {
 	_queue.push_back(b);	
 }
 
-std::shared_ptr<void> CXX_TRACING_API make_activity(const char* name) {		
-	std::shared_ptr<void> raii = std::shared_ptr<void>(nullptr, [=](void*){ send_block(ProfileBlock(name, PhaseEnd)); });
+std::shared_ptr<void> CXX_TRACING_API cxxtracing_make_activity(const char* name, const char * cat) {
+	std::shared_ptr<void> raii = std::shared_ptr<void>(nullptr, [=](void*){ send_block(ProfileBlock(name, PhaseEnd, cat?cat:"")); });
 	send_block(ProfileBlock(name, PhaseBegin));
 	return raii;
 }
 
-void CXX_TRACING_API begin_activity(const char *name) {
+void CXX_TRACING_API cxxtracing_begin_activity(const char * name, const char *cat) {
 	send_block(ProfileBlock(name, PhaseBegin));
 }
-void CXX_TRACING_API end_activity(const char *name) {
+void CXX_TRACING_API cxxtracing_end_activity(const char * name, const char *cat) {
 	send_block(ProfileBlock(name, PhaseEnd));
 
 }
-void CXX_TRACING_API add_mark(const char *name) {
+void CXX_TRACING_API cxxtracing_add_mark(const char * name, const char *cat) {
 	send_block(ProfileBlock(name, PhaseMark));
 }
-void CXX_TRACING_API set_process_name(const char *) {
+void CXX_TRACING_API cxxtracing_set_process_name(const char *) {
 
 }
-void CXX_TRACING_API set_thread_name(const char * name) {
+void CXX_TRACING_API cxxtracing_set_thread_name(const char * name) {
 	_threadNames[std::this_thread::get_id()] = name;
 }
 
-void CXX_TRACING_API set_category_name(const char *) {
-
-}
-
 static bool running = true;
-void receive() {
+void receive(const char* filename) {
 	std::fstream f;
-	f.open("c:\\tmp\\trace.json", std::ios_base::out | std::ios_base::trunc);
-	bool b = f.is_open();
+	f.open(filename, std::ios_base::out | std::ios_base::trunc);
 	f << "{\"traceEvents\": [\n";
 	std::string sep;
 	while (running) {
@@ -148,7 +144,7 @@ void receive() {
 		}
 
 		for (auto & block : copy) {
-			
+			 
 			f << sep << std::endl << block.to_string();
 			if (sep.empty())
 				sep = ",";
@@ -159,10 +155,10 @@ void receive() {
 
 }
 
-CXX_TRACING_EXPORT void CXX_TRACING_API init() {
-	std::swap(receiver, std::thread(receive));
+CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_init(const char * filename) {
+	std::swap(receiver, std::thread(receive, filename));
 }
-CXX_TRACING_EXPORT void CXX_TRACING_API shutdown() {
+CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_shutdown() {
 	running = false;
 	receiver.join();
 }
