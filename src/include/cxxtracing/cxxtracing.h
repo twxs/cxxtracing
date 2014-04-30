@@ -2,18 +2,30 @@
 #define CXXTRACING_H
 
 #include "cxxtracing_common.h"
+
+
+
+#ifdef __cplusplus
+
 #include <memory>
 
-
-
-
+// define a scoped activity
 CXX_TRACING_EXPORT std::shared_ptr<void> CXX_TRACING_API cxxtracing_make_activity(const char* name, const char * category = NULL);
+
+#endif
+
 extern "C"{
+	// initialize the profiling API, `file` is 
 	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_init(const char* file);
+
 	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_shutdown();
 
 	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_begin_activity(const char *, const char * category = NULL);
 	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_end_activity(const char *, const char * category = NULL);
+
+	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_begin_activity_async(const char *, const char * category = NULL);
+	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_end_activity_async(const char *, const char * category = NULL);
+
 	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_add_mark(const char *, const char * category = NULL);
 	CXX_TRACING_EXPORT void CXX_TRACING_API cxxtracing_set_process_name(const char * name);
 
@@ -30,8 +42,10 @@ extern "C"{
 #define HELPER(NAME)  NAME ## _LINE_ 
 #define CXXTRACING_INIT(FileName) cxxtracing_init(FileName);
 #define CXXTRACING_PROCESS_NAME(Name) cxxtracing_set_process_name(Name)
-#define CXXTRACING_THREAD_NAME(Name) cxxtracing_set_process_name(Name)
+#define CXXTRACING_THREAD_NAME(Name) cxxtracing_set_thread_name(Name)
 #define CXXTRACING_ACTIVITY(ActivityName) auto CXXTRACING_HELPER_COMBINE(junk, __LINE__) = cxxtracing_make_activity(ActivityName);
+#define CXXTRACING_BEGIN_ASYNC(ActivityName) cxxtracing_begin_activity_async(ActivityName);
+#define CXXTRACING_END_ASYNC(ActivityName) cxxtracing_end_activity_async(ActivityName);
 #define CXXTRACING_MARK(MarkName) cxxtracing_add_mark(MarkName);
 #define CXXTRACING_ACTIVITY2(Category, ActivityName)  CXXTRACING_HELPER_COMBINE(junk, __LINE__) = cxxtracing_make_activity(ActivityName, Category);
 #define CXXTRACING_MARK2(Category, MarkName) cxxtracing_add_mark(MarkName, Category);

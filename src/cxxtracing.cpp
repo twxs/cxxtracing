@@ -46,7 +46,7 @@ struct ProfileBlock {
 	std::map<std::string, std::string> args;
 	Phase phase;
 
-	ProfileBlock(const std::string name, Phase phase, std::string category = std::string() ) {
+	ProfileBlock(const std::string& name, Phase phase, std::string category = std::string() ) {
 		auto start = std::chrono::system_clock::now();
 		this->process = _processName;
 		this->thread = thread_name();
@@ -88,6 +88,7 @@ struct ProfileBlock {
 		str << "\"tid\": \"" << thread << "\", ";
 		str << "\"ts\": " << timestamp << ", ";
 		str << "\"ph\": \"" << phase_string() << "\", ";
+		str << "\"id\": \"" << "0xdededede" << "\", ";
 		str << "\"name\": \"" << name << "\", ";
 		str << "\"args\": {" "} ";
 		str << "} ";
@@ -117,8 +118,15 @@ void CXX_TRACING_API cxxtracing_begin_activity(const char * name, const char *ca
 }
 void CXX_TRACING_API cxxtracing_end_activity(const char * name, const char *cat) {
 	send_block(ProfileBlock(name, PhaseEnd));
-
 }
+
+void CXX_TRACING_API cxxtracing_begin_activity_async(const char * name, const char *cat) {
+	send_block(ProfileBlock(name, PhaseBeginAsync));
+}
+void CXX_TRACING_API cxxtracing_end_activity_async(const char * name, const char *cat) {
+	send_block(ProfileBlock(name, PhaseEndAsync));
+}
+
 void CXX_TRACING_API cxxtracing_add_mark(const char * name, const char *cat) {
 	send_block(ProfileBlock(name, PhaseMark));
 }
